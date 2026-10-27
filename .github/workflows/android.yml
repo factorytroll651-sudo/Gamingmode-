@@ -1,1 +1,31 @@
-name: Build Android APK on: push: branches: [ "main" ] workflow_dispatch: jobs: build: runs-on: ubuntu-latest steps: - name: Checkout code uses: actions/checkout@v4 - name: Set up JDK 17 uses: actions/setup-java@v4 with: java-version: '17' distribution: 'temurin' - name: Find and setup gradlew run: find . -name "gradlew" -exec chmod +x {} + || true - name: Generate dummy debug keystore run: keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "C=US, O=Android, CN=Android Debug" - name: Build Debug APK run: | if [ -f "gradlew" ]; then ./gradlew assembleDebug elif [ -d "android" ] && [ -f "android/gradlew" ]; then cd android && ./gradlew assembleDebug else gradle assembleDebug fi - name: Upload all APKs uses: actions/upload-artifact@v4 with: name: my-android-app path: '**/*.apk'
+name: Build Android APK
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+      - name: Set up Gradle 8.9
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: 8.9
+      - name: List repo files
+        run: find . -not -path "./.git/*" -type f | sort | head -60
+      - name: Build Debug APK
+        run: gradle assembleDebug --no-daemon --stacktrace
+      - name: Upload all APKs
+        uses: actions/upload-artifact@v4
+        with:
+          name: my-android-app
+          path: '**/*.apk'
