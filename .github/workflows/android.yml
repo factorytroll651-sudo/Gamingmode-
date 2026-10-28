@@ -17,17 +17,15 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: 8.9
-      - name: Find project folder
-        id: find
+      - name: Unzip project
         run: |
-          echo "Files in repo:"; find . -not -path "./.git/*" -type f | sort | head -80
-          F=$(find . -name settings.gradle.kts -not -path "./.git/*" | head -1)
-          if [ -z "$F" ]; then echo "ERROR: settings.gradle.kts is NOT in this repo"; exit 1; fi
-          echo "dir=$(dirname "$F")" >> "$GITHUB_OUTPUT"
+          mkdir -p project
+          unzip -o VNX-GAME-HUB-4.0.zip -d project
+          echo "Project files:"; find project -type f | sort
       - name: Build Debug APK
         run: gradle assembleDebug --no-daemon --console=plain
-        working-directory: ${{ steps.find.outputs.dir }}
+        working-directory: project
       - uses: actions/upload-artifact@v4
         with:
           name: my-android-app
-          path: '**/build/outputs/apk/debug/*.apk'
+          path: 'project/app/build/outputs/apk/debug/*.apk'
