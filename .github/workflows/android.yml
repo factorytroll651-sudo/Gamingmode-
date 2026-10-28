@@ -7,25 +7,27 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
       - name: Accept Android licenses
         run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
-      - name: Set up Gradle 8.9
-        uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: 8.9
-      - name: List repo files
-        run: find . -not -path "./.git/*" -type f | sort | head -60
+      - name: Find project folder
+        id: find
+        run: |
+          echo "Files in repo:"; find . -not -path "./.git/*" -type f | sort | head -80
+          F=$(find . -name settings.gradle.kts -not -path "./.git/*" | head -1)
+          if [ -z "$F" ]; then echo "ERROR: settings.gradle.kts is NOT in this repo"; exit 1; fi
+          echo "dir=$(dirname "$F")" >> "$GITHUB_OUTPUT"
       - name: Build Debug APK
-        run: gradle assembleDebug --no-daemon --stacktrace
-      - name: Upload all APKs
-        uses: actions/upload-artifact@v4
+        run: gradle assembleDebug --no-daemon --console=plain
+        working-directory: ${{ steps.find.outputs.dir }}
+      - uses: actions/upload-artifact@v4
         with:
           name: my-android-app
-          path: '**/*.apk'
+          path: '**/build/outputs/apk/debug/*.apk'
