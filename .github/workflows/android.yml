@@ -19,8 +19,10 @@ jobs:
           gradle-version: 8.9
       - name: Unzip project
         run: |
+          Z=$(ls VNX-GAME-HUB-*.zip | sort -V | tail -1)
+          echo "Using $Z"
           mkdir -p project
-          unzip -o VNX-GAME-HUB-4.0.zip -d project
+          unzip -o "$Z" -d project
           echo "Project files:"; find project -type f | sort
       - name: Build Debug APK
         run: gradle assembleDebug --no-daemon --console=plain
